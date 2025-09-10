@@ -3,7 +3,7 @@ window.onload = function () {
   var merrywrap = document.getElementById("merrywrap");
   var box = merrywrap.getElementsByClassName("giftbox")[0];
   var step = 1;
-  var stepMinutes = [2000, 2000, 1000, 1000];
+  var stepMinutes = [500, 500, 300, 300];
   function init() {
     box.addEventListener("click", openBox, false);
   }
@@ -99,9 +99,7 @@ function reveal() {
     requestAnimationFrame(loop);
 
     // Después de cierta cantidad de frames, mostramos la carta
-    if(frames === 500){ // ajusta el número para durar más o menos
-      showLetter();
-    }
+    setTimeout(showLetter, 2000);
   }
 
   loop();
