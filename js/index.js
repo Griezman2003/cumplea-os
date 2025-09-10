@@ -99,7 +99,7 @@ function reveal() {
     requestAnimationFrame(loop);
 
     // Después de cierta cantidad de frames, mostramos la carta
-    if(frames === 600){ // ajusta el número para durar más o menos
+    if(frames === 500){ // ajusta el número para durar más o menos
       showLetter();
     }
   }
