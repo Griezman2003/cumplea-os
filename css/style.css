@@ -298,3 +298,22 @@ h4 {
 .text-right {
 	text-align: right;
 }
+
+
+@media (max-width: 480px) {
+  .card {
+    width: 90%; /* ya lo tienes, pero refuerza */
+    height: auto; /* que se ajuste al contenido */
+  }
+
+  .card h4 {
+    font-size: 20px; /* más pequeño en móvil */
+    line-height: 1.2; /* evita que se rompa */
+  }
+
+  .card .details p {
+    font-size: 13px;
+    line-height: 1.2;
+    padding-left: 10px; /* menos espacio a la izquierda */
+  }
+}
