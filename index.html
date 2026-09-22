@@ -1,44 +1,649 @@
-<!DOCTYPR html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>¡Feliz Cumpleaños Reyna!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Feliz Cumpleaños</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #000201;
+            color: #f0f7f4;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            position: relative;
+        }
+
+        #world-3d {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            z-index: 1;
+            cursor: grab;
+        }
+        #world-3d:active { cursor: grabbing; }
+
+        .hud-header {
+            position: fixed;
+            top: 20px;
+            z-index: 40;
+            background: rgba(2, 12, 7, 0.85);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(163, 228, 215, 0.25);
+            padding: 12px 20px;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8), 0 0 30px rgba(46, 204, 113, 0.1);
+            pointer-events: none;
+            width: 92%;
+            max-width: 500px;
+        }
+
+        .hud-header h1 {
+            font-family: 'Playfair Display', serif;
+            color: #2ecc71;
+            font-size: 1.3rem;
+            margin-bottom: 2px;
+            text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+        }
+
+        .hud-header p {
+            font-size: 0.8rem;
+            color: #a3e4d7;
+            letter-spacing: 0.5px;
+            line-height: 1.3;
+        }
+
+        #planet-modal {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%) translateY(150px);
+            z-index: 50;
+            width: 92%;
+            max-width: 480px;
+            background: rgba(2, 16, 9, 0.96);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid #2ecc71;
+            border-radius: 25px;
+            padding: 24px 20px;
+            text-align: center;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.95), 0 0 40px rgba(46, 204, 113, 0.3);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #planet-modal.active {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #planet-modal h2 {
+            font-family: 'Playfair Display', serif;
+            color: #2ecc71;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        #planet-modal p {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #e8f8f5;
+            margin-bottom: 16px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #2ecc71 0%, #117a65 100%);
+            color: #fff;
+            border: none;
+            padding: 9px 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+        }
+        .btn-action:hover { transform: scale(1.05); }
+
+        .btn-close {
+            background: rgba(10, 45, 28, 0.8);
+            color: #a3e4d7;
+            border: 1px solid rgba(163, 228, 215, 0.3);
+            padding: 9px 18px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-close:hover { background: rgba(18, 75, 48, 0.9); border-color: #2ecc71; color: #fff; }
+
+        #sound-toggle, #reset-view {
+            position: fixed;
+            bottom: 25px;
+            z-index: 50;
+            background: rgba(2, 12, 7, 0.85);
+            border: 1px solid rgba(163, 228, 215, 0.3);
+            color: #58d68d;
+            padding: 9px 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        }
+        #sound-toggle { left: 15px; }
+        #reset-view { right: 15px; display: none; }
         
-        <!-- Link CSS Style.css file-->
-        
-        <link rel="stylesheet" href="css/style.css">
-        
-    </head>
-    <body>        
-        <canvas id="canvas"></canvas>
-                        
-        <div id="merrywrap" class="merrywrap">
-            <div class="giftbox">
-                <div class="cover">
-                    <div></div>
-                </div>
+        #sound-toggle:hover, #reset-view:hover {
+            background: #2ecc71;
+            color: #010403;
+            border-color: #2ecc71;
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.6);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hud-header">
+        <h1>Galaxia de los Deseos</h1>
+        <p>Gira, haz zoom y explora los mundos en órbita</p>
+    </div>
+
+    <button id="sound-toggle" onclick="toggleAmbienteSonoro()">Música: Off</button>
+    <button id="reset-view" onclick="resetearVistaGalaxia()">Vista General</button>
+    
+
+    <audio id="background-audio" src="./musica/Hans Zimmer - S T A Y (Interstellar) [wFcG2KCNCUA].mp3" loop preload="auto"></audio>
+
+    <div id="world-3d"></div>
+
+    <div id="planet-modal">
+        <h2 id="modal-title">Título del Planeta</h2>
+        <p id="modal-desc">Descripción detallada...</p>
+        <div class="modal-buttons">
+            <button class="btn-action" onclick="lanzarFiestaPlaneta()">🎉 ¡Celebrar!</button>
+            <button class="btn-close" onclick="cerrarModalPlaneta()">Cerrar</button>
+        </div>
+    </div>
+
+    <script>
+        let scene, camera, renderer, clock = new THREE.Clock();
+        let galaxyParticles, starField, shootingStarsSystem, planetasOrbitas = [];
+        let sunMesh, sunLight;
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+        let planetaSeleccionado = null;
+        let isUserInteracting = false;
+        let onPointerDownMouseX = 0, onPointerDownMouseY = 0;
+        let lon = 0, lat = 20, targetLon = 0, targetLat = 20;
+        let cameraRadius = 15;
+        let targetRadius = 15;
+
+        let musicaActiva = false;
+
+        // NUEVA FUNCIÓN PARA REPRODUCIR TU ARCHIVO DE AUDIO
+        function toggleAmbienteSonoro() {
+            const audioEl = document.getElementById('background-audio');
+            const btn = document.getElementById('sound-toggle');
+            
+            if (!musicaActiva) {
+                audioEl.play().then(() => {
+                    musicaActiva = true;
+                    btn.innerHTML = "🔊 Música: On";
+                }).catch(error => {
+                    console.log("El navegador bloqueó la reproducción automática o falta el archivo:", error);
+                    alert("No se pudo reproducir la música. Verifica que la ruta del archivo sea correcta.");
+                });
+            } else {
+                audioEl.pause();
+                musicaActiva = false;
+                btn.innerHTML = "🔊 Música: Off";
+            }
+        }
+
+        function init3D() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('world-3d').appendChild(renderer.domElement);
+
+            crearEntornoHiperrealista();
+            crearLluviaDeEstrellas();
+
+            const container = document.getElementById('world-3d');
+            container.addEventListener('mousedown', onPointerDown);
+            container.addEventListener('mousemove', onPointerMove);
+            container.addEventListener('mouseup', onPointerUp);
+            container.addEventListener('wheel', onDocumentMouseWheel, { passive: false });
+
+            container.addEventListener('touchstart', onTouchStart, { passive: false });
+            container.addEventListener('touchmove', onTouchMove, { passive: false });
+            container.addEventListener('touchend', onPointerUp);
+
+            container.addEventListener('click', onGalacticClick);
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function crearEntornoHiperrealista() {
+            const starCount = 4000;
+            const starGeo = new THREE.BufferGeometry();
+            const starPos = new Float32Array(starCount * 3);
+            const starSizes = new Float32Array(starCount);
+
+            for(let i = 0; i < starCount * 3; i += 3) {
+                starPos[i] = (Math.random() - 0.5) * 120;
+                starPos[i+1] = (Math.random() - 0.5) * 120;
+                starPos[i+2] = (Math.random() - 0.5) * 120;
+                starSizes[i/3] = Math.random() * 0.15 + 0.02;
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+            starGeo.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
+            
+            const starMat = new THREE.PointsMaterial({ size: 0.08, color: 0xffffff, transparent: true, opacity: 0.7 });
+            starField = new THREE.Points(starGeo, starMat);
+            scene.add(starField);
+
+            const sunGeo = new THREE.SphereGeometry(0.8, 32, 32);
+            const sunMat = new THREE.MeshBasicMaterial({ color: 0xfffae6 });
+            sunMesh = new THREE.Mesh(sunGeo, sunMat);
+            scene.add(sunMesh);
+
+            const corona1 = new THREE.Mesh(
+                new THREE.SphereGeometry(1.2, 32, 32),
+                new THREE.MeshBasicMaterial({ color: 0xff9900, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, side: THREE.BackSide })
+            );
+            sunMesh.add(corona1);
+
+            const corona2 = new THREE.Mesh(
+                new THREE.SphereGeometry(1.7, 32, 32),
+                new THREE.MeshBasicMaterial({ color: 0xff3300, transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending, side: THREE.BackSide })
+            );
+            sunMesh.add(corona2);
+
+            sunLight = new THREE.PointLight(0xfffae6, 3.5, 40, 1.5);
+            sunLight.castShadow = true;
+            sunLight.shadow.bias = -0.001;
+            sunMesh.add(sunLight);
+
+            scene.add(new THREE.AmbientLight(0x0a1a15, 0.6));
+
+            const count = 9000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(count * 3);
+            const colors = new Float32Array(count * 3);
+
+            const colCore = new THREE.Color(0xfff5cc);
+            const colMid = new THREE.Color(0x3498db);
+            const colEdge = new THREE.Color(0x1b4f72);
+            const arms = 3;
+
+            for (let i = 0; i < count; i++) {
+                const i3 = i * 3;
+                const r = Math.pow(Math.random(), 0.8) * 11;
+                const branch = ((i % arms) / arms) * Math.PI * 2;
+                const spin = r * 0.75;
                 
-                <div class="box"></div>
-            </div>
-        </div>
+                const scatterX = (Math.random() - 0.5) * (r * 0.3 + 0.2);
+                const scatterZ = (Math.random() - 0.5) * (r * 0.3 + 0.2);
 
-      </div>
-          
-      <div id="letter" class="card">
-        <div class="imgBox">
-          <div class="bark"></div>
-          <img src="img/imagen.jpg">
-        </div>
-        <div class="details">
-          <h4 class="color3">FELIZ</h2>
-          <h4 class="color3">CUMPLEAÑOS!</h2>
-          <p></p>Hola Mari ! , Te quiero desear un hermoso feliz cumpleaños en compañia de tus amigos y seres queridos,
-          deseo que cumplas muchos años mas. 
-          atte.
-        </div>
-      </div>
-      <script src="js/index.js"></script>
-        
-    </body>
+                positions[i3]     = Math.cos(branch + spin) * r + scatterX;
+                positions[i3 + 1] = (Math.random() - 0.5) * (1.2 / (r + 0.5));
+                positions[i3 + 2] = Math.sin(branch + spin) * r + scatterZ;
+
+                let c = colCore.clone();
+                if (r < 2) {
+                    c.lerp(colMid, r / 2);
+                } else {
+                    c.lerp(colMid, 0.4).lerp(colEdge, (r - 2) / 9);
+                }
+
+                colors[i3] = c.r;
+                colors[i3 + 1] = c.g;
+                colors[i3 + 2] = c.b;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            let grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            grad.addColorStop(0, 'rgba(255,255,255,1)');
+            grad.addColorStop(0.3, 'rgba(100,180,220,0.6)');
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, 64, 64);
+
+            const pTexture = new THREE.CanvasTexture(canvas);
+            const pMat = new THREE.PointsMaterial({
+                size: 0.14, vertexColors: true, map: pTexture, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+            });
+
+            galaxyParticles = new THREE.Points(geometry, pMat);
+            scene.add(galaxyParticles);
+
+            const datosPlanetas = [
+                {
+                    nombre: "Planeta Esmeralda (Tu Energía)",
+                    color: 0x2ecc71,
+                    radioOrbit: 3.8,
+                    velocidad: 0.45,
+                    tamano: 0.38,
+                    rugosidad: 0.5,
+                    dedicatoria: "Reyna, tienes una energía única y desbordante que ilumina cada lugar al que vas. Que este año multiplique todas tus alegrías."
+                },
+                {
+                    nombre: "Planeta Zafiro (Tus Metas)",
+                    color: 0x3498db,
+                    radioOrbit: 6.0,
+                    velocidad: 0.32,
+                    tamano: 0.48,
+                    rugosidad: 0.4,
+                    conAnillos: true,
+                    dedicatoria: "La pasión y disciplina con la que persigues tus sueños es inspiradora. Este planeta celebra cada uno de tus triunfos pasados y futuros."
+                },
+                {
+                    nombre: "Planeta Ámbar (Tu Bondad)",
+                    color: 0xf1c40f,
+                    radioOrbit: 8.2,
+                    velocidad: 0.22,
+                    tamano: 0.44,
+                    rugosidad: 0.6,
+                    dedicatoria: "Posees un corazón noble y generoso. Gracias por hacer que el mundo de quienes te rodeamos sea un lugar mucho más cálido y feliz."
+                },
+                {
+                    nombre: "Planeta Amatista (Aventuras)",
+                    color: 0x9b59b6,
+                    radioOrbit: 10.5,
+                    velocidad: 0.15,
+                    tamano: 0.52,
+                    rugosidad: 0.5,
+                    conAnillos: true,
+                    dedicatoria: "Que este nuevo ciclo de vida te regale viajes inolvidables, risas interminables y recuerdos que atesorarás por siempre en el alma."
+                }
+            ];
+
+            datosPlanetas.forEach((data) => {
+                const orbitGeo = new THREE.RingGeometry(data.radioOrbit - 0.015, data.radioOrbit + 0.015, 64);
+                const orbitMat = new THREE.MeshBasicMaterial({ color: data.color, side: THREE.DoubleSide, transparent: true, opacity: 0.12 });
+                const orbitMesh = new THREE.Mesh(orbitGeo, orbitMat);
+                orbitMesh.rotation.x = Math.PI / 2;
+                scene.add(orbitMesh);
+
+                const grupoOrbit = new THREE.Group();
+                scene.add(grupoOrbit);
+
+                const geometryPlaneta = new THREE.SphereGeometry(data.tamano, 32, 32);
+                const materialPlaneta = new THREE.MeshStandardMaterial({
+                    color: data.color,
+                    roughness: data.rugosidad,
+                    metalness: 0.1,
+                    emissive: data.color,
+                    emissiveIntensity: 0.08
+                });
+                
+                const meshPlaneta = new THREE.Mesh(geometryPlaneta, materialPlaneta);
+                meshPlaneta.castShadow = true;
+                meshPlaneta.receiveShadow = true;
+                meshPlaneta.position.x = data.radioOrbit;
+                grupoOrbit.add(meshPlaneta);
+
+                if (data.conAnillos) {
+                    const ringGeo = new THREE.RingGeometry(data.tamano * 1.35, data.tamano * 2.1, 32);
+                    const ringMat = new THREE.MeshStandardMaterial({ color: data.color, side: THREE.DoubleSide, transparent: true, opacity: 0.6, roughness: 0.3 });
+                    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+                    ringMesh.rotation.x = Math.PI / 2.3;
+                    ringMesh.receiveShadow = true;
+                    ringMesh.castShadow = true;
+                    meshPlaneta.add(ringMesh);
+                }
+
+                planetasOrbitas.push({
+                    grupo: grupoOrbit,
+                    mesh: meshPlaneta,
+                    velocidad: data.velocidad,
+                    nombre: data.nombre,
+                    dedicatoria: data.dedicatoria
+                });
+            });
+        }
+
+        function crearLluviaDeEstrellas() {
+            const count = 30;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(count * 3);
+            const velocities = [];
+
+            for(let i = 0; i < count; i++) {
+                positions[i * 3]     = (Math.random() - 0.5) * 50;
+                positions[i * 3 + 1] = Math.random() * 25 + 10;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 50;
+
+                velocities.push({
+                    x: (Math.random() - 0.5) * 0.1 - 0.15,
+                    y: -Math.random() * 0.25 - 0.15,
+                    z: (Math.random() - 0.5) * 0.1 - 0.15
+                });
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const material = new THREE.PointsMaterial({
+                size: 0.1, color: 0x58d68d, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending
+            });
+
+            shootingStarsSystem = new THREE.Points(geometry, material);
+            shootingStarsSystem.userData = { velocities: velocities };
+            scene.add(shootingStarsSystem);
+        }
+
+        function actualizarLluviaEstrellas() {
+            if (!shootingStarsSystem) return;
+            const positions = shootingStarsSystem.geometry.attributes.position.array;
+            const velocities = shootingStarsSystem.userData.velocities;
+
+            for(let i = 0; i < velocities.length; i++) {
+                positions[i * 3]     += velocities[i].x;
+                positions[i * 3 + 1] += velocities[i].y;
+                positions[i * 3 + 2] += velocities[i].z;
+
+                if(positions[i * 3 + 1] < -15) {
+                    positions[i * 3]     = (Math.random() - 0.5) * 50;
+                    positions[i * 3 + 1] = Math.random() * 25 + 15;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 50;
+                }
+            }
+            shootingStarsSystem.geometry.attributes.position.needsUpdate = true;
+        }
+
+        function onPointerDown(event) {
+            isUserInteracting = true;
+            onPointerDownMouseX = event.clientX;
+            onPointerDownMouseY = event.clientY;
+            targetLon = lon;
+            targetLat = lat;
+        }
+
+        function onPointerMove(event) {
+            if (isUserInteracting === false) return;
+            lon = (onPointerDownMouseX - event.clientX) * 0.25 + targetLon;
+            lat = (event.clientY - onPointerDownMouseY) * 0.25 + targetLat;
+        }
+
+        function onTouchStart(event) {
+            if (event.touches.length === 1) {
+                isUserInteracting = true;
+                onPointerDownMouseX = event.touches[0].clientX;
+                onPointerDownMouseY = event.touches[0].clientY;
+                targetLon = lon;
+                targetLat = lat;
+            }
+        }
+
+        function onTouchMove(event) {
+            if (event.touches.length === 1 && isUserInteracting) {
+                lon = (onPointerDownMouseX - event.touches[0].clientX) * 0.25 + targetLon;
+                lat = (event.touches[0].clientY - onPointerDownMouseY) * 0.25 + targetLat;
+            }
+        }
+
+        function onPointerUp() { isUserInteracting = false; }
+
+        function onDocumentMouseWheel(event) {
+            event.preventDefault();
+            targetRadius += event.deltaY * 0.005;
+            targetRadius = Math.max(6, Math.min(26, targetRadius));
+            document.getElementById('reset-view').style.display = 'block';
+        }
+
+        function onGalacticClick(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            let meshesPlanetas = planetasOrbitas.map(p => p.mesh);
+            let intersects = raycaster.intersectObjects(meshesPlanetas);
+
+            if (intersects.length > 0) {
+                let clickedMesh = intersects[0].object;
+                let planetaEncontrado = planetasOrbitas.find(p => p.mesh === clickedMesh);
+
+                if (planetaEncontrado) {
+                    planetaSeleccionado = planetaEncontrado;
+                    mostrarModalDedicatoria(planetaEncontrado);
+
+                    gsap.to(camera, {
+                        duration: 1.5,
+                        fov: 45,
+                        onUpdate: () => camera.updateProjectionMatrix()
+                    });
+
+                    document.getElementById('reset-view').style.display = 'block';
+                }
+            }
+        }
+
+        function mostrarModalDedicatoria(planeta) {
+            document.getElementById('modal-title').innerText = planeta.nombre;
+            document.getElementById('modal-desc').innerText = planeta.dedicatoria;
+            document.getElementById('planet-modal').classList.add('active');
+        }
+
+        function cerrarModalPlaneta() {
+            document.getElementById('planet-modal').classList.remove('active');
+        }
+
+        function resetearVistaGalaxia() {
+            targetRadius = 15;
+            lat = 20;
+            lon = 0;
+            cerrarModalPlaneta();
+            document.getElementById('reset-view').style.display = 'none';
+
+            gsap.to(camera, {
+                duration: 1.5,
+                fov: 60,
+                onUpdate: () => camera.updateProjectionMatrix()
+            });
+        }
+
+        function lanzarFiestaPlaneta() {
+            confetti({
+                particleCount: 150, spread: 110, origin: { y: 0.65 },
+                colors: ['#2ecc71', '#3498db', '#f1c40f', '#9b59b6', '#ffffff']
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            let delta = clock.getDelta();
+
+            if (galaxyParticles) galaxyParticles.rotation.y += delta * 0.012;
+            if (starField) starField.rotation.y -= delta * 0.003;
+            if (sunMesh) sunMesh.rotation.y += delta * 0.1;
+
+            actualizarLluviaEstrellas();
+
+            planetasOrbitas.forEach(p => {
+                p.grupo.rotation.y += delta * 0.1 * p.velocidad;
+                p.mesh.rotation.y += delta * 0.3;
+            });
+
+            cameraRadius += (targetRadius - cameraRadius) * 0.08;
+            lat = Math.max(-85, Math.min(85, lat));
+            let phi = THREE.MathUtils.degToRad(90 - lat);
+            let theta = THREE.MathUtils.degToRad(lon);
+
+            if (planetaSeleccionado && document.getElementById('planet-modal').classList.contains('active')) {
+                let pWorldPos = new THREE.Vector3();
+                planetaSeleccionado.mesh.getWorldPosition(pWorldPos);
+                
+                let targetCamX = pWorldPos.x + 1.8;
+                let targetCamY = pWorldPos.y + 1.0;
+                let targetCamZ = pWorldPos.z + 2.2;
+
+                camera.position.x += (targetCamX - camera.position.x) * 0.05;
+                camera.position.y += (targetCamY - camera.position.y) * 0.05;
+                camera.position.z += (targetCamZ - camera.position.z) * 0.05;
+                camera.lookAt(pWorldPos);
+            } else {
+                camera.position.x = cameraRadius * Math.sin(phi) * Math.cos(theta);
+                camera.position.y = cameraRadius * Math.cos(phi);
+                camera.position.z = cameraRadius * Math.sin(phi) * Math.sin(theta);
+                camera.lookAt(scene.position);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        init3D();
+        animate();
+    </script>
+</body>
 </html>
